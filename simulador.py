@@ -1,6 +1,5 @@
-import csv
 import matplotlib.pyplot as plt
-import random
+import csv
 
 class Simulador:
     def __init__(self):
@@ -15,44 +14,22 @@ class Simulador:
 
     def iniciar_simulacion(self):
         infectados_totales = []
-        casos_activos = []
-
         for paso in range(self.num_pasos):
-            nuevos_infectados = self.simular_paso()
-            infectados_totales.append(len(nuevos_infectados))
-            casos_activos.append(len([c for c in self.comunidad.ciudadanos if not c.estado]))
-
-            print(f"El total de contagios de la comunidad: {sum(infectados_totales)}; casos activos: {casos_activos[-1]}.")
-
-            if casos_activos[-1] == 0:
-                break
-
-            # Guardar estado en archivo CSV
-            self.guardar_estado(paso, nuevos_infectados)
-
-        # Graficar el resultado final
-        self.graficar_infectados(infectados_totales)
-
-    def simular_paso(self):
-        nuevos_infectados = []
-        for ciudadano in self.comunidad.ciudadanos:
-            if not ciudadano.estado and ciudadano.enfermedad and ciudadano.enfermedad.contador > 0:
-                if random.random() < ciudadano.enfermedad.infeccion_probable:
-                    nuevos_infectados.append(ciudadano)
-                ciudadano.enfermedad.contador -= 1
-                if ciudadano.enfermedad.contador <= 0:
-                    ciudadano.estado = True
-        return nuevos_infectados
-
-    def guardar_estado(self, paso, nuevos_infectados):
-        with open('estado_simulacion.csv', 'a', newline='') as file:
+            self.comunidad.paso()
+            infectados_totales.append(self.comunidad.num_infectados)
+            print(f"El total de contagios de la comunidad: {self.comunidad.num_contagios}; casos activos: {self.comunidad.num_infectados}.")
+            
+        # Guardar los datos de la simulación en un archivo CSV
+        with open('resultados.csv', 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([paso, len(nuevos_infectados)])
-
-    def graficar_infectados(self, infectados_totales):
+            writer.writerow(['Paso', 'Infectados'])
+            for i, infectados in enumerate(infectados_totales):
+                writer.writerow([i, infectados])
+        
+        # Guardar la figura en lugar de mostrarla
+        plt.figure()
         plt.plot(infectados_totales)
         plt.xlabel('Pasos')
-        plt.ylabel('Número de Infectados')
-        plt.title('Simulación de Enfermedades Infecciosas')
-        plt.savefig('grafico_infectados.png')
-        plt.show()
+        plt.ylabel('Infectados')
+        plt.title('Simulación de Enfermedad Infecciosa')
+        plt.savefig('grafico.png')

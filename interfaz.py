@@ -1,12 +1,18 @@
 import os
 import gi
-import time
-import sys
-gi.require_version('Gtk', '4.0')
+import threading
+import csv
+import json
+import matplotlib.pyplot as plt
 from gi.repository import Gtk, Gio, GLib
+
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_gtk4agg import FigureCanvasGTK4Agg as FigureCanvas
+
+gi.require_version('Gtk', '4.0')
 
 class Interfaz(Gtk.Application):
     def __init__(self):
@@ -25,14 +31,13 @@ class Interfaz(Gtk.Application):
         self.window.present()
 
     def build_ui(self):
-        # Creación de la barra de menú
-        header_bar = Gtk.HeaderBar.new()
+        header_bar = Gtk.HeaderBar()
         header_bar.set_show_title_buttons(True)
-        header_bar.set_title("Simulador de Enfermedades Infecciosas")
+        header_bar.set_title_widget(Gtk.Label(label="Simulador de Enfermedades Infecciosas"))
         self.window.set_titlebar(header_bar)
 
-        self.menu_button = Gtk.MenuButton.new()
-        self.menu_model = Gio.Menu.new()
+        self.menu_button = Gtk.MenuButton()
+        self.menu_model = Gio.Menu()
         self.menu_model.append("Acerca de", "app.about")
         self.menu_button.set_menu_model(self.menu_model)
         header_bar.pack_end(self.menu_button)
@@ -47,21 +52,21 @@ class Interfaz(Gtk.Application):
         self.label_ciudadanos = Gtk.Label(label="Número de ciudadanos:")
         vbox.append(self.label_ciudadanos)
 
-        self.entrada_ciudadanos = Gtk.Entry.new()
+        self.entrada_ciudadanos = Gtk.Entry()
         self.entrada_ciudadanos.set_placeholder_text("Número de ciudadanos")
         vbox.append(self.entrada_ciudadanos)
 
         self.label_infectados = Gtk.Label(label="Número inicial de infectados:")
         vbox.append(self.label_infectados)
 
-        self.entrada_infectados = Gtk.Entry.new()
+        self.entrada_infectados = Gtk.Entry()
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
         self.label_pasos = Gtk.Label(label="Número de pasos:")
         vbox.append(self.label_pasos)
 
-        self.entrada_pasos = Gtk.Entry.new()
+        self.entrada_pasos = Gtk.Entry()
         self.entrada_pasos.set_placeholder_text("Número de pasos")
         vbox.append(self.entrada_pasos)
 
@@ -110,18 +115,38 @@ class Interfaz(Gtk.Application):
         sim.set_comunidad(comunidad)
         sim.set_num_pasos(num_pasos)
 
-        # Ejecutar simulación en un hilo separado para no bloquear la interfaz
-        import threading
-        sim_thread = threading.Thread(target=self.run_simulation, args=(sim,))
-        sim_thread.start()
+        # Ejecutar la simulación en un hilo separado
+        thread = threading.Thread(target=self.run_simulation, args=(sim,))
+        thread.start()
 
     def run_simulation(self, sim):
-        result = sim.iniciar_simulacion()
-        GLib.idle_add(self.update_result_label, "Simulación completada. Revisa los archivos CSV y el gráfico.")
-        
-    def update_result_label(self, text):
-        self.resultado.set_text(text)
-        return False  # Para eliminar el callback de la cola
+        sim.iniciar_simulacion()
+        GLib.idle_add(self.on_simulation_complete)
 
-app = Interfaz()
-app.run(sys.argv)
+    def on_simulation_complete(self):
+        self.resultado.set_text("Simulación completada. Revisa los archivos CSV y el gráfico.")
+        self.mostrar_grafico()
+        return False  # Para detener la función en el bucle de eventos
+
+    def mostrar_grafico(self):
+        figure = Figure(figsize=(5, 4), dpi=100)
+        ax = figure.add_subplot(111)
+        with open('resultados.csv', 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  # Saltar la cabecera
+            pasos = []
+            infectados = []
+            for row in reader:
+                pasos.append(int(row[0]))
+                infectados.append(int(row[1]))
+        ax.plot(pasos, infectados)
+        ax.set_xlabel('Pasos')
+        ax.set_ylabel('Infectados')
+        ax.set_title('Simulación de Enfermedad Infecciosa')
+
+        canvas = FigureCanvas(figure)  # a Gtk.DrawingArea
+        self.window.set_child(canvas)
+
+if __name__ == "__main__":
+    app = Interfaz()
+    app.run(None)
