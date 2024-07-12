@@ -1,18 +1,17 @@
 import gi
 import threading
 import csv
-import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from gi.repository import Gtk, Gio, GLib
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_gtk4agg import FigureCanvasGTK4Agg as FigureCanvas
 
 gi.require_version('Gtk', '4.0')
 
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_gtk4agg import FigureCanvasGTK4Agg as FigureCanvas
 
 class Interfaz(Gtk.Application):
     def __init__(self):
@@ -130,14 +129,15 @@ class Interfaz(Gtk.Application):
 
     def show_graph(self):
         df = pd.read_csv('resultados.csv')
-        
+
         figure = Figure(figsize=(8, 6))
         ax = figure.add_subplot(111)
-        
-        ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos")
+
+        ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos", color='blue')
+        ax.plot(df['Día'], df['Total Contagios'], label="Total Contagios", color='red')
         ax.set_title("Simulación de Infectados")
         ax.set_xlabel("Días")
-        ax.set_ylabel("Casos Activos")
+        ax.set_ylabel("Número de Casos")
         ax.legend()
 
         figure.savefig("grafico_simulacion.png")
