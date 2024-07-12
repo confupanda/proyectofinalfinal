@@ -63,11 +63,11 @@ class Interfaz(Gtk.Application):
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
-        self.label_pasos = Gtk.Label(label="Número de días:")
+        self.label_pasos = Gtk.Label(label="Número de dias:")
         vbox.append(self.label_pasos)
 
         self.entrada_pasos = Gtk.Entry()
-        self.entrada_pasos.set_placeholder_text("Número de días")
+        self.entrada_pasos.set_placeholder_text("Número de dias")
         vbox.append(self.entrada_pasos)
 
         self.boton_iniciar = Gtk.Button(label="Iniciar Simulación")
@@ -109,7 +109,7 @@ class Interfaz(Gtk.Application):
             self.resultado.set_text("Todos los valores deben ser mayores que 0.")
             return
 
-        enfermedad = Enfermedad(infeccion_probable=0.3, promedio_pasos=7)
+        enfermedad = Enfermedad(infeccion_probable=0.3, duracion_infeccion=7)
         comunidad = Comunidad(num_ciudadanos, 10, enfermedad, num_infectados, 0.05)
         simulador = Simulador()
         simulador.set_comunidad(comunidad)
@@ -139,13 +139,16 @@ class Interfaz(Gtk.Application):
             next(reader)  # Saltar la cabecera
             for row in reader:
                 pasos.append(int(row[0]))
-                infectados.append(int(row[1]))  # Total infectados
+                infectados.append(int(row[2]))  # Casos activos en lugar de total contagios
 
-        ax.plot(pasos, infectados, label="Total Infectados")
+        ax.plot(pasos, infectados, label="Casos Activos")
         ax.set_title("Simulación de Infectados")
         ax.set_xlabel("Días")
-        ax.set_ylabel("Total Infectados")
+        ax.set_ylabel("Casos Activos")
         ax.legend()
+
+        # Guardar el gráfico en un archivo PNG
+        figure.savefig("grafico_simulacion.png")
 
         # Mostrar el gráfico en la interfaz GTK
         canvas = FigureCanvas(figure)
@@ -156,3 +159,4 @@ class Interfaz(Gtk.Application):
         window.set_default_size(800, 600)
         window.set_child(canvas)
         window.present()
+
