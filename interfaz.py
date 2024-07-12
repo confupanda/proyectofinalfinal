@@ -1,6 +1,5 @@
 import gi
 import threading
-import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 from gi.repository import Gtk, Gio, GLib
@@ -62,12 +61,26 @@ class Interfaz(Gtk.Application):
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
-        self.label_pasos = Gtk.Label(label="Número de dias:")
+        self.label_pasos = Gtk.Label(label="Número de días:")
         vbox.append(self.label_pasos)
 
         self.entrada_pasos = Gtk.Entry()
-        self.entrada_pasos.set_placeholder_text("Número de dias")
+        self.entrada_pasos.set_placeholder_text("Número de días")
         vbox.append(self.entrada_pasos)
+
+        self.label_beta = Gtk.Label(label="Tasa de infección (beta):")
+        vbox.append(self.label_beta)
+
+        self.entrada_beta = Gtk.Entry()
+        self.entrada_beta.set_placeholder_text("Tasa de infección (beta)")
+        vbox.append(self.entrada_beta)
+
+        self.label_gamma = Gtk.Label(label="Tasa de recuperación (gamma):")
+        vbox.append(self.label_gamma)
+
+        self.entrada_gamma = Gtk.Entry()
+        self.entrada_gamma.set_placeholder_text("Tasa de recuperación (gamma)")
+        vbox.append(self.entrada_gamma)
 
         self.boton_iniciar = Gtk.Button(label="Iniciar Simulación")
         self.boton_iniciar.connect("clicked", self.on_start_button_clicked)
@@ -95,22 +108,26 @@ class Interfaz(Gtk.Application):
         num_ciudadanos = self.entrada_ciudadanos.get_text()
         num_infectados = self.entrada_infectados.get_text()
         num_pasos = self.entrada_pasos.get_text()
+        beta = self.entrada_beta.get_text()
+        gamma = self.entrada_gamma.get_text()
 
-        if not num_ciudadanos.isdigit() or not num_infectados.isdigit() or not num_pasos.isdigit():
+        if not num_ciudadanos.isdigit() or not num_infectados.isdigit() or not num_pasos.isdigit() or not beta.replace('.', '', 1).isdigit() or not gamma.replace('.', '', 1).isdigit():
             self.resultado.set_text("Por favor ingrese valores válidos.")
             return
 
         num_ciudadanos = int(num_ciudadanos)
         num_infectados = int(num_infectados)
         num_pasos = int(num_pasos)
+        beta = float(beta)
+        gamma = float(gamma)
 
-        if num_ciudadanos < 1 or num_infectados < 1 or num_pasos < 1:
+        if num_ciudadanos < 1 or num_infectados < 1 or num_pasos < 1 or beta <= 0 or gamma <= 0:
             self.resultado.set_text("Todos los valores deben ser mayores que 0.")
             return
 
         enfermedad = Enfermedad(infeccion_probable=0.3, duracion_infeccion=7)
         comunidad = Comunidad(num_ciudadanos, 10, enfermedad, num_infectados, 0.05)
-        simulador = Simulador()
+        simulador = Simulador(beta, gamma, num_ciudadanos)
         simulador.set_comunidad(comunidad)
         simulador.set_num_pasos(num_pasos)
 
@@ -128,25 +145,26 @@ class Interfaz(Gtk.Application):
         self.show_graph()
 
     def show_graph(self):
-        df = pd.read_csv('resultados.csv')
+        df = pd.read_csv('resultados_sir.csv')
 
         figure = Figure(figsize=(8, 6))
         ax = figure.add_subplot(111)
 
-        ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos", color='blue')
-        ax.plot(df['Día'], df['Total Contagios'], label="Total Contagios", color='red')
-        ax.set_title("Simulación de Infectados")
+        ax.plot(df['Día'], df['Susceptibles'], label="Susceptibles", color='blue')
+        ax.plot(df['Día'], df['Infectados'], label="Infectados", color='red')
+        ax.plot(df['Día'], df['Recuperados'], label="Recuperados", color='green')
+        ax.set_title("Simulación SIR")
         ax.set_xlabel("Días")
         ax.set_ylabel("Número de Casos")
         ax.legend()
 
-        figure.savefig("grafico_simulacion.png")
+        figure.savefig("grafico_sir.png")
 
         canvas = FigureCanvas(figure)
         canvas.set_size_request(800, 600)
 
         window = Gtk.Window()
-        window.set_title("Gráfico de la Simulación")
+        window.set_title("Gráfico de la Simulación SIR")
         window.set_default_size(800, 600)
         window.set_child(canvas)
         window.present()
