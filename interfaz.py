@@ -1,15 +1,19 @@
 import os
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gio, GLib
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
 
 class Interfaz(Gtk.Application):
     def __init__(self):
-        super().__init__(application_id="org.example.SIRSimulator")
+        super().__init__(application_id="org.example.SIRSimulator", flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.window = None
+
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+        self.add_actions()
 
     def do_activate(self):
         if not self.window:
@@ -21,13 +25,16 @@ class Interfaz(Gtk.Application):
 
     def build_ui(self):
         # Creación de la barra de menú
+        header_bar = Gtk.HeaderBar()
+        header_bar.set_show_close_button(True)
+        header_bar.set_title("Simulador")
+        self.window.set_titlebar(header_bar)
+
         self.menu_button = Gtk.MenuButton()
         self.menu_model = Gio.Menu()
         self.menu_model.append("Acerca de", "app.about")
         self.menu_button.set_menu_model(self.menu_model)
-        self.window.set_titlebar(self.menu_button)
-
-        self.add_about_action()
+        header_bar.pack_end(self.menu_button)
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         vbox.set_margin_top(20)
@@ -64,7 +71,7 @@ class Interfaz(Gtk.Application):
         self.resultado = Gtk.Label()
         vbox.append(self.resultado)
 
-    def add_about_action(self):
+    def add_actions(self):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.show_about_dialog)
         self.add_action(about_action)

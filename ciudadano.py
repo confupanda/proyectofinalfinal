@@ -5,7 +5,7 @@ class Ciudadano:
         self.apellido = apellido
         self.familia = familia
         self.enfermedad = None
-        self.estado = True  # True para sano, False para muerto
+        self.estado = True  # True para sano, False para infectado
 
     def infectar(self, enfermedad):
         self.enfermedad = enfermedad
