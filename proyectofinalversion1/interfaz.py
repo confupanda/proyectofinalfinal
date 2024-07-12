@@ -1,5 +1,3 @@
-# interfaz.py
-
 import gi
 import threading
 import csv
@@ -14,7 +12,7 @@ gi.require_version('Gtk', '4.0')
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
-from modelo_sir import ModeloSIR  # Importar el modelo SIR
+from modelo_sir import ModeloSIR  
 
 class Interfaz(Gtk.Application):
     def __init__(self):
@@ -121,7 +119,9 @@ class Interfaz(Gtk.Application):
 
         thread = threading.Thread(target=self.run_simulation, args=(simulador, num_ciudadanos, num_infectados, num_pasos))
         thread.start()
-
+#crear la clase ciudadano
+#crear intaccion entre ciudadano y determinar si es o no familia
+#determinar la interaccion entre las personas, hay gente que no se conoce
     def run_simulation(self, simulador, num_ciudadanos, num_infectados, num_pasos):
         simulador.iniciar_simulacion()
         modelo_sir = ModeloSIR(num_ciudadanos, num_infectados, 0, 0.3, 0.1)  # Crear el modelo SIR
@@ -132,9 +132,10 @@ class Interfaz(Gtk.Application):
         df_sir.to_csv('resultados_sir.csv', index=False)  # Guardar resultados del modelo SIR
 
         # Obtener estadísticas finales del modelo SIR
-        suscep_sir = df_sir['Susceptibles'].iloc[-1]
-        infectados_sir = df_sir['Infectados'].iloc[-1]
-        recuperados_sir = df_sir['Recuperados'].iloc[-1]
+        suscep_sir = df_sir['Susceptibles'].iat[-1]
+        infectados_sir = df_sir['Infectados'].iat[-1]
+        recuperados_sir = df_sir['Recuperados'].iat[-1]
+
         total_contagios_sir = num_ciudadanos - suscep_sir
 
         print(f"El total de contagios del modelo SIR en la comunidad: {total_contagios_sir:.0f}")
@@ -178,6 +179,8 @@ class Interfaz(Gtk.Application):
         ax.set_xlabel("Día")
         ax.set_ylabel("Número de Personas")
         ax.legend()
+        
+        figure.savefig("grafico_simulacion.png")
 
         canvas = FigureCanvas(figure)
         window = Gtk.Window(title="Resultados de la Simulación")

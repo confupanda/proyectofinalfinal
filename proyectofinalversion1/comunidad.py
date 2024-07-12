@@ -27,7 +27,9 @@ class Comunidad:
             print("El archivo 'nombres_apellidos.json' no se encuentra en el directorio.")
             return pd.DataFrame()
         
-        # Crear ciudadanos con nombres y apellidos aleatorios
+        #carga nombres y apellidos de un archivo JSON 
+        #si el archivo no se encuentra, imprime un mensaje de error y devuelve un DataFrame vacio
+        
         ciudadanos = pd.DataFrame({
             'id': range(1, self.num_ciudadanos + 1),
             'nombre': [random.choice(nombres) + " " + random.choice(apellidos) for _ in range(self.num_ciudadanos)],
@@ -38,12 +40,17 @@ class Comunidad:
             'dia_sano': [-1 for _ in range(self.num_ciudadanos)]
         })
         
-        # Extraer apellidos y asignar ID familiar
-        ciudadanos['apellido'] = ciudadanos['nombre'].apply(lambda x: x.split()[-1])
+        #creo un DataFrame con columnas para el id, nombre, edad, 
+        #y varios estados de infección (infectado, dias_infectado, dia_infectado, dia_sano). 
+        
+        ciudadanos['apellido'] = [nombre.split()[-1] for nombre in ciudadanos['nombre']]
+
         ciudadanos['id_familiar'] = self.generar_id_familiar(ciudadanos['apellido'])
         
         return ciudadanos
-
+    #extrae los apellidos y se generan IDs familiares para cada ciudadano
+    #se devuelve el DataFrame 
+    
     def generar_id_familiar(self, apellidos):
         id_familiar = []
         familias = apellidos.value_counts()
@@ -56,10 +63,12 @@ class Comunidad:
                 for miembro in grupo_familiar:
                     id_familiar.append((miembro, id_actual))
                 id_actual += 1
+        # se itera sobre los índices de los miembros de la familia en pasos de 3
         
         id_familiar.sort()  # Ordenar para coincidir con el DataFrame original
         return [id for _, id in id_familiar]
-
+       # se ordena la lista id_familiar 
+       # para mantener el orden original del DataFrame.
     def guardar_ciudadanos_csv(self):
         self.ciudadanos.to_csv('ciudadanos.csv', index=False)
         
@@ -78,6 +87,8 @@ class Comunidad:
                 self.ciudadanos.at[idx, 'dias_infectado'] = -1
                 self.ciudadanos.at[idx, 'dia_sano'] = self.dia_actual
                 self.num_infectados -= 1
+    #simula el dia, se seleccionan los ciudadanos infectados y se decrece su contador de dias_infectado
+    #Si llega a cero, el ciudadano se marca como sano.
     
             contactos = self.ciudadanos.sample(self.promedio_conexion_fisica)
             for _, contacto in contactos.iterrows():
