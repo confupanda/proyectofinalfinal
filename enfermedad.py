@@ -8,3 +8,5 @@ class Enfermedad:
     def es_infeccioso(self):
         return random.random() < self.infeccion_probable
 
+#define la clase Enfermedad que contiene la probabilidad de infección y la duración de la infección
+#el metodo es_infeccioso determina si la infección ocurre basado en la probabilidad.

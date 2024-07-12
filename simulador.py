@@ -16,10 +16,15 @@ class Simulador:
 
         for paso in range(self.num_pasos):
             self.comunidad.paso()
-            resultados = resultados.append({
+            resultados = pd.concat([resultados, pd.DataFrame([{
                 'Día': self.comunidad.dia_actual,
                 'Total Contagios': self.comunidad.num_contagios,
                 'Casos Activos': self.comunidad.num_infectados
-            }, ignore_index=True)
+            }])], ignore_index=True)
         
         resultados.to_csv('resultados.csv', index=False)
+
+
+#define la clase Simulador que controla la simulación
+#configura la comunidad, el número de pasos
+#y ejecuta la simulación guardando los resultados en un archivo CSV.
