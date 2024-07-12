@@ -28,8 +28,7 @@ class Interfaz(Gtk.Application):
             self.window.set_default_size(400, 400)
             self.build_ui()
         self.window.present()
-#define la clase Interfaz que hereda de Gtk.Application
-#inicia la aplicación, configura acciones y construye la ventana principal de la aplicación
+
     def build_ui(self):
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_title_buttons(True)
@@ -41,8 +40,6 @@ class Interfaz(Gtk.Application):
         self.menu_model.append("Acerca de", "app.about")
         self.menu_button.set_menu_model(self.menu_model)
         header_bar.pack_end(self.menu_button)
-    #construye la interfaz de usuario, incluyendo la barra de encabezado 
-    #y un botón de menu
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         vbox.set_margin_top(20)
@@ -78,15 +75,12 @@ class Interfaz(Gtk.Application):
 
         self.resultado = Gtk.Label()
         vbox.append(self.resultado)
-    #añade widgets a la ventana, incluyendo etiquetas, 
-    #campos de entrada y un botón para iniciar la simulación
 
     def add_actions(self):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.show_about_dialog)
         self.add_action(about_action)
         
-    #define la acción "acerca de" que muestra un diálogo con información sobre la aplicacion
 
     def show_about_dialog(self, action, param):
         about_dialog = Gtk.AboutDialog(
@@ -98,7 +92,6 @@ class Interfaz(Gtk.Application):
         )
         about_dialog.present()
 
-#define el método para mostrar el dialogo "acerca de"
 
     def on_start_button_clicked(self, button):
         num_ciudadanos = self.entrada_ciudadanos.get_text()
@@ -128,28 +121,36 @@ class Interfaz(Gtk.Application):
         thread = threading.Thread(target=self.run_simulation, args=(simulador,))
         thread.start()
 
-#este método se ejecuta cuando se hace clic en el botón "Iniciar Simulación" 
-#toma los valores de entrada, valida los datos, crea una instancia de Enfermedad y Comunidad
-#configura el simulador y lanza un hilo para ejecutar la simulación
-
     def run_simulation(self, simulador):
         simulador.iniciar_simulacion()
         GLib.idle_add(self.update_results)
-#inicia la simulación y actualiza los resultados al finalizar.
 
     def update_results(self):
         self.resultado.set_text("Simulación completada.")
         self.show_graph()
-#actualiza la interfaz de usuario indicando que la simulación ha terminado y muestra el gráfico de resultados.
 
     def show_graph(self):
         df = pd.read_csv('resultados.csv')
+
+        # Contar las personas que jamás se infectaron
+        ciudadanos = pd.read_csv('ciudadanos.csv')
+        nunca_infectados = ciudadanos[ciudadanos['dia_infectado'] == -1].shape[0]
+        
+        # Contar las personas recuperadas
+        recuperados = ciudadanos[(ciudadanos['dia_infectado'] != -1) & (ciudadanos['dias_infectado'] == -1)].shape[0]
 
         figure = Figure(figsize=(8, 6))
         ax = figure.add_subplot(111)
 
         ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos", color='blue')
         ax.plot(df['Día'], df['Total Contagios'], label="Total Contagios", color='red')
+
+        # Añadir la línea para las personas que jamás se infectaron
+        ax.axhline(y=nunca_infectados, color='green', linestyle='--', label="Jamás Infectados")
+
+        # Añadir la línea para las personas recuperadas
+        ax.axhline(y=recuperados, color='purple', linestyle='-.', label="Recuperados")
+
         ax.set_title("Simulación de Infectados")
         ax.set_xlabel("Días")
         ax.set_ylabel("Número de Casos")
@@ -165,4 +166,4 @@ class Interfaz(Gtk.Application):
         window.set_default_size(800, 600)
         window.set_child(canvas)
         window.present()
-#lee el archivo resultados.csv, crea un gráfico con los datos de la simulación y lo muestra en una nueva ventana.
+
