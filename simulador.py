@@ -26,5 +26,5 @@ class Simulador:
 
 
 #define la clase Simulador que controla la simulación
-#configura la comunidad, el número de pasos
+#configura la comunidad, el número de dias
 #y ejecuta la simulación guardando los resultados en un archivo CSV.
