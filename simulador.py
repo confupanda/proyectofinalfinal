@@ -14,26 +14,23 @@ class Simulador:
         self.num_pasos = num_pasos
 
     def iniciar_simulacion(self):
-        if not self.comunidad or self.num_pasos <= 0:
-            return
-
         infectados_totales = []
         casos_activos = []
 
         for paso in range(self.num_pasos):
             nuevos_infectados = self.simular_paso()
             infectados_totales.append(len(nuevos_infectados))
-            casos_activos.append(len(nuevos_infectados))
+            casos_activos.append(len([c for c in self.comunidad.ciudadanos if not c.estado]))
 
-            # Imprimir estado en la terminal
-            print(f"El total de contagios de la comunidad: {len(nuevos_infectados)}; casos activos: {len(nuevos_infectados)}.")
+            print(f"El total de contagios de la comunidad: {sum(infectados_totales)}; casos activos: {casos_activos[-1]}.")
 
-            # Detener la simulación si los casos activos son 0
-            if len(nuevos_infectados) == 0:
+            if casos_activos[-1] == 0:
                 break
 
+            # Guardar estado en archivo CSV
             self.guardar_estado(paso, nuevos_infectados)
 
+        # Graficar el resultado final
         self.graficar_infectados(infectados_totales)
 
     def simular_paso(self):

@@ -1,5 +1,7 @@
 import os
 import gi
+import time
+import sys
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gio, GLib
 from enfermedad import Enfermedad
@@ -18,20 +20,19 @@ class Interfaz(Gtk.Application):
     def do_activate(self):
         if not self.window:
             self.window = Gtk.ApplicationWindow(application=self)
-            self.window.set_title("Simulador de Enfermedades Infecciosas")
             self.window.set_default_size(400, 400)
             self.build_ui()
         self.window.present()
 
     def build_ui(self):
         # Creación de la barra de menú
-        header_bar = Gtk.HeaderBar()
-        header_bar.set_show_close_button(True)
-        header_bar.set_title("Simulador")
+        header_bar = Gtk.HeaderBar.new()
+        header_bar.set_show_title_buttons(True)
+        header_bar.set_title("Simulador de Enfermedades Infecciosas")
         self.window.set_titlebar(header_bar)
 
-        self.menu_button = Gtk.MenuButton()
-        self.menu_model = Gio.Menu()
+        self.menu_button = Gtk.MenuButton.new()
+        self.menu_model = Gio.Menu.new()
         self.menu_model.append("Acerca de", "app.about")
         self.menu_button.set_menu_model(self.menu_model)
         header_bar.pack_end(self.menu_button)
@@ -46,21 +47,21 @@ class Interfaz(Gtk.Application):
         self.label_ciudadanos = Gtk.Label(label="Número de ciudadanos:")
         vbox.append(self.label_ciudadanos)
 
-        self.entrada_ciudadanos = Gtk.Entry()
+        self.entrada_ciudadanos = Gtk.Entry.new()
         self.entrada_ciudadanos.set_placeholder_text("Número de ciudadanos")
         vbox.append(self.entrada_ciudadanos)
 
         self.label_infectados = Gtk.Label(label="Número inicial de infectados:")
         vbox.append(self.label_infectados)
 
-        self.entrada_infectados = Gtk.Entry()
+        self.entrada_infectados = Gtk.Entry.new()
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
         self.label_pasos = Gtk.Label(label="Número de pasos:")
         vbox.append(self.label_pasos)
 
-        self.entrada_pasos = Gtk.Entry()
+        self.entrada_pasos = Gtk.Entry.new()
         self.entrada_pasos.set_placeholder_text("Número de pasos")
         vbox.append(self.entrada_pasos)
 
@@ -108,9 +109,19 @@ class Interfaz(Gtk.Application):
         sim = Simulador()
         sim.set_comunidad(comunidad)
         sim.set_num_pasos(num_pasos)
-        sim.iniciar_simulacion()
 
-        self.resultado.set_text("Simulación completada. Revisa los archivos CSV y el gráfico.")
+        # Ejecutar simulación en un hilo separado para no bloquear la interfaz
+        import threading
+        sim_thread = threading.Thread(target=self.run_simulation, args=(sim,))
+        sim_thread.start()
+
+    def run_simulation(self, sim):
+        result = sim.iniciar_simulacion()
+        GLib.idle_add(self.update_result_label, "Simulación completada. Revisa los archivos CSV y el gráfico.")
+        
+    def update_result_label(self, text):
+        self.resultado.set_text(text)
+        return False  # Para eliminar el callback de la cola
 
 app = Interfaz()
-app.run(None)
+app.run(sys.argv)
