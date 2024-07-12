@@ -1,3 +1,5 @@
+# interfaz.py
+
 import gi
 import threading
 import csv
@@ -12,6 +14,7 @@ gi.require_version('Gtk', '4.0')
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
+from modelo_sir import ModeloSIR  # Importar el modelo SIR
 
 class Interfaz(Gtk.Application):
     def __init__(self):
@@ -80,7 +83,6 @@ class Interfaz(Gtk.Application):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.show_about_dialog)
         self.add_action(about_action)
-        
 
     def show_about_dialog(self, action, param):
         about_dialog = Gtk.AboutDialog(
@@ -91,7 +93,6 @@ class Interfaz(Gtk.Application):
             authors=["Cristian Morales"]
         )
         about_dialog.present()
-
 
     def on_start_button_clicked(self, button):
         num_ciudadanos = self.entrada_ciudadanos.get_text()
@@ -118,11 +119,18 @@ class Interfaz(Gtk.Application):
 
         self.resultado.set_text("Simulación en curso...")
 
-        thread = threading.Thread(target=self.run_simulation, args=(simulador,))
+        thread = threading.Thread(target=self.run_simulation, args=(simulador, num_ciudadanos, num_infectados, num_pasos))
         thread.start()
 
-    def run_simulation(self, simulador):
+    def run_simulation(self, simulador, num_ciudadanos, num_infectados, num_pasos):
         simulador.iniciar_simulacion()
+        modelo_sir = ModeloSIR(num_ciudadanos, num_infectados, 0, 0.3, 0.1)  # Crear el modelo SIR
+        for _ in range(num_pasos):
+            modelo_sir.paso()  # Ejecutar un paso del modelo SIR
+        resultados_sir = modelo_sir.obtener_resultados()
+        df_sir = pd.DataFrame(resultados_sir, columns=['Susceptibles', 'Infectados', 'Recuperados'])
+        df_sir.to_csv('resultados_sir.csv', index=False)  # Guardar resultados del modelo SIR
+
         GLib.idle_add(self.update_results)
 
     def update_results(self):
@@ -131,6 +139,7 @@ class Interfaz(Gtk.Application):
 
     def show_graph(self):
         df = pd.read_csv('resultados.csv')
+        df_sir = pd.read_csv('resultados_sir.csv')
 
         # Contar las personas que jamás se infectaron
         ciudadanos = pd.read_csv('ciudadanos.csv')
@@ -145,25 +154,23 @@ class Interfaz(Gtk.Application):
         ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos", color='blue')
         ax.plot(df['Día'], df['Total Contagios'], label="Total Contagios", color='red')
 
+        # Añadir las series del modelo SIR
+        ax.plot(df_sir.index, df_sir['Susceptibles'], label="Susceptibles (SIR)", color='orange')
+        ax.plot(df_sir.index, df_sir['Infectados'], label="Infectados (SIR)", color='purple')
+        ax.plot(df_sir.index, df_sir['Recuperados'], label="Recuperados (SIR)", color='green')
+
         # Añadir la línea para las personas que jamás se infectaron
         ax.axhline(y=nunca_infectados, color='green', linestyle='--', label="Jamás Infectados")
 
         # Añadir la línea para las personas recuperadas
-        ax.axhline(y=recuperados, color='purple', linestyle='-.', label="Recuperados")
+        ax.axhline(y=recuperados, color='purple', linestyle='--', label="Recuperados")
 
-        ax.set_title("Simulación de Infectados")
-        ax.set_xlabel("Días")
-        ax.set_ylabel("Número de Casos")
+        ax.set_xlabel("Día")
+        ax.set_ylabel("Número de Personas")
         ax.legend()
 
-        figure.savefig("grafico_simulacion.png")
-
         canvas = FigureCanvas(figure)
-        canvas.set_size_request(800, 600)
-
-        window = Gtk.Window()
-        window.set_title("Gráfico de la Simulación")
+        window = Gtk.Window(title="Resultados de la Simulación")
         window.set_default_size(800, 600)
         window.set_child(canvas)
-        window.present()
-
+        window.show()
