@@ -6,13 +6,13 @@ import json
 import matplotlib.pyplot as plt
 from gi.repository import Gtk, Gio, GLib
 
+gi.require_version('Gtk', '4.0')
+
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk4agg import FigureCanvasGTK4Agg as FigureCanvas
-
-gi.require_version('Gtk', '4.0')
 
 class Interfaz(Gtk.Application):
     def __init__(self):
@@ -63,11 +63,11 @@ class Interfaz(Gtk.Application):
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
-        self.label_pasos = Gtk.Label(label="Número de pasos:")
+        self.label_pasos = Gtk.Label(label="Número de dias:")
         vbox.append(self.label_pasos)
 
         self.entrada_pasos = Gtk.Entry()
-        self.entrada_pasos.set_placeholder_text("Número de pasos")
+        self.entrada_pasos.set_placeholder_text("Número de dias")
         vbox.append(self.entrada_pasos)
 
         self.boton_iniciar = Gtk.Button(label="Iniciar Simulación")
@@ -98,55 +98,67 @@ class Interfaz(Gtk.Application):
         num_pasos = self.entrada_pasos.get_text()
 
         if not num_ciudadanos.isdigit() or not num_infectados.isdigit() or not num_pasos.isdigit():
-            self.resultado.set_text("Por favor, ingrese valores válidos.")
+            self.resultado.set_text("Por favor ingrese valores válidos.")
             return
 
         num_ciudadanos = int(num_ciudadanos)
         num_infectados = int(num_infectados)
         num_pasos = int(num_pasos)
 
-        if num_ciudadanos <= 0 or num_infectados < 0 or num_infectados > num_ciudadanos or num_pasos <= 0:
-            self.resultado.set_text("Ingrese valores coherentes.")
+        if num_ciudadanos < 1 or num_infectados < 1 or num_pasos < 1:
+            self.resultado.set_text("Todos los valores deben ser mayores que 0.")
             return
 
-        covid = Enfermedad(infeccion_probable=0.3, promedio_pasos=18)
-        comunidad = Comunidad(num_ciudadanos=num_ciudadanos, promedio_conexion_fisica=8, enfermedad=covid, num_infectados=num_infectados, probabilidad_conexion_fisica=0.8)
-        sim = Simulador()
-        sim.set_comunidad(comunidad)
-        sim.set_num_pasos(num_pasos)
+        enfermedad = Enfermedad(infeccion_probable=0.3, duracion_infeccion=7)
+        comunidad = Comunidad(num_ciudadanos, 10, enfermedad, num_infectados, 0.05)
+        simulador = Simulador()
+        simulador.set_comunidad(comunidad)
+        simulador.set_num_pasos(num_pasos)
 
-        # Ejecutar la simulación en un hilo separado
-        thread = threading.Thread(target=self.run_simulation, args=(sim,))
+        self.resultado.set_text("Simulación en curso...")
+
+        thread = threading.Thread(target=self.run_simulation, args=(simulador,))
         thread.start()
 
-    def run_simulation(self, sim):
-        sim.iniciar_simulacion()
-        GLib.idle_add(self.on_simulation_complete)
+    def run_simulation(self, simulador):
+        simulador.iniciar_simulacion()
+        GLib.idle_add(self.update_results)
 
-    def on_simulation_complete(self):
-        self.resultado.set_text("Simulación completada. Revisa los archivos CSV y el gráfico.")
-        self.mostrar_grafico()
-        return False  # Para detener la función en el bucle de eventos
+    def update_results(self):
+        self.resultado.set_text("Simulación completada.")
+        self.show_graph()
 
-    def mostrar_grafico(self):
-        figure = Figure(figsize=(5, 4), dpi=100)
+    def show_graph(self):
+        figure = Figure(figsize=(8, 6))
         ax = figure.add_subplot(111)
+
         pasos = []
         infectados = []
         with open('resultados.csv', 'r') as file:
             reader = csv.reader(file)
             next(reader)  # Saltar la cabecera
             for row in reader:
-                pasos.append(int(row[0]))
-                infectados.append(int(row[1]))
-        ax.plot(pasos, infectados)
-        ax.set_xlabel('Pasos')
-        ax.set_ylabel('Infectados')
-        ax.set_title('Simulación de Enfermedad Infecciosa')
+                paso = int(row[0])
+                infectado = row[3] == 'True'
+                if infectado:
+                    if len(pasos) < paso:
+                        pasos.append(paso)
+                        infectados.append(1)
+                    else:
+                        infectados[paso - 1] += 1
 
+        ax.plot(pasos, infectados, label="Casos Activos")
+        ax.set_title("Simulación de Infectados")
+        ax.set_xlabel("Días")
+        ax.set_ylabel("Casos Activos")
+        ax.legend()
+
+        # Mostrar el gráfico en la interfaz GTK
         canvas = FigureCanvas(figure)
-        self.window.set_child(canvas)
+        canvas.set_size_request(800, 600)
 
-if __name__ == "__main__":
-    app = Interfaz()
-    app.run(None)
+        window = Gtk.Window()
+        window.set_title("Gráfico de la Simulación")
+        window.set_default_size(800, 600)
+        window.set_child(canvas)
+        window.present()
