@@ -1,41 +1,33 @@
 import os
 import gi
-import time
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio, GLib
+from gi.repository import Gtk, Gio
 from enfermedad import Enfermedad
 from comunidad import Comunidad
 from simulador import Simulador
 
 class Interfaz(Gtk.Application):
     def __init__(self):
-        super().__init__(application_id="org.example.SIRSimulator", flags=Gio.ApplicationFlags.FLAGS_NONE)
+        super().__init__(application_id="org.example.SIRSimulator")
         self.window = None
-
-    def do_startup(self):
-        Gtk.Application.do_startup(self)
-        self.add_actions()
 
     def do_activate(self):
         if not self.window:
             self.window = Gtk.ApplicationWindow(application=self)
+            self.window.set_title("Simulador de Enfermedades Infecciosas")
             self.window.set_default_size(400, 400)
             self.build_ui()
         self.window.present()
 
     def build_ui(self):
         # Creación de la barra de menú
-        header_bar = Gtk.HeaderBar()
-        header_bar.set_show_title_buttons(True)
-        header_label = Gtk.Label(label="Simulador de Enfermedades Infecciosas")
-        header_bar.set_title_widget(header_label)
-        self.window.set_titlebar(header_bar)
-
         self.menu_button = Gtk.MenuButton()
         self.menu_model = Gio.Menu()
         self.menu_model.append("Acerca de", "app.about")
         self.menu_button.set_menu_model(self.menu_model)
-        header_bar.pack_end(self.menu_button)
+        self.window.set_titlebar(self.menu_button)
+
+        self.add_about_action()
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         vbox.set_margin_top(20)
@@ -72,7 +64,7 @@ class Interfaz(Gtk.Application):
         self.resultado = Gtk.Label()
         vbox.append(self.resultado)
 
-    def add_actions(self):
+    def add_about_action(self):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.show_about_dialog)
         self.add_action(about_action)
@@ -109,14 +101,9 @@ class Interfaz(Gtk.Application):
         sim = Simulador()
         sim.set_comunidad(comunidad)
         sim.set_num_pasos(num_pasos)
-        
-        # Mostrar resultados en la terminal durante la simulación
-        GLib.timeout_add_seconds(1, self.run_simulation, sim)
+        sim.iniciar_simulacion()
 
-    def run_simulation(self, sim):
-        result = sim.iniciar_simulacion()
         self.resultado.set_text("Simulación completada. Revisa los archivos CSV y el gráfico.")
-        return False  # Detener el timeout
 
 app = Interfaz()
 app.run(None)

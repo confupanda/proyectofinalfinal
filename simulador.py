@@ -32,10 +32,8 @@ class Simulador:
             if len(nuevos_infectados) == 0:
                 break
 
-            # Guardar estado en archivo CSV
             self.guardar_estado(paso, nuevos_infectados)
 
-        # Graficar el resultado final
         self.graficar_infectados(infectados_totales)
 
     def simular_paso(self):
@@ -61,4 +59,3 @@ class Simulador:
         plt.title('Simulación de Enfermedades Infecciosas')
         plt.savefig('grafico_infectados.png')
         plt.show()
-
