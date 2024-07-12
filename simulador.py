@@ -1,6 +1,6 @@
 import csv
-import random
 import matplotlib.pyplot as plt
+import random
 
 class Simulador:
     def __init__(self):
@@ -14,44 +14,51 @@ class Simulador:
         self.num_pasos = num_pasos
 
     def iniciar_simulacion(self):
-        infectados_por_paso = []
+        if not self.comunidad or self.num_pasos <= 0:
+            return
+
+        infectados_totales = []
+        casos_activos = []
+
         for paso in range(self.num_pasos):
-            nuevos_infectados = 0
-            for ciudadano in self.comunidad.ciudadanos:
-                if not ciudadano.estado:  # Si está infectado
-                    contactos = self.obtener_contactos(ciudadano)
-                    for contacto in contactos:
-                        if contacto.estado and random.random() < self.comunidad.enfermedad.infeccion_probable:
-                            contacto.infectar(self.comunidad.enfermedad)
-                            nuevos_infectados += 1
+            nuevos_infectados = self.simular_paso()
+            infectados_totales.append(len(nuevos_infectados))
+            casos_activos.append(len(nuevos_infectados))
 
-            infectados = sum(1 for c in self.comunidad.ciudadanos if not c.estado)
-            infectados_por_paso.append(infectados)
-            self.guardar_estado(paso)
+            # Imprimir estado en la terminal
+            print(f"El total de contagios de la comunidad: {len(nuevos_infectados)}; casos activos: {len(nuevos_infectados)}.")
 
-        self.graficar(infectados_por_paso)
+            # Detener la simulación si los casos activos son 0
+            if len(nuevos_infectados) == 0:
+                break
 
-    def obtener_contactos(self, ciudadano):
-        contactos = []
-        for _ in range(self.comunidad.promedio_conexion_fisica):
-            if random.random() < self.comunidad.probabilidad_conexion_fisica:
-                contacto = random.choice(self.comunidad.ciudadanos)
-                if contacto.id != ciudadano.id:
-                    contactos.append(contacto)
-        return contactos
+            # Guardar estado en archivo CSV
+            self.guardar_estado(paso, nuevos_infectados)
 
-    def guardar_estado(self, paso):
-        with open(f'estado_pasoooooooo_{paso}.csv', 'w', newline='') as file:
+        # Graficar el resultado final
+        self.graficar_infectados(infectados_totales)
+
+    def simular_paso(self):
+        nuevos_infectados = []
+        for ciudadano in self.comunidad.ciudadanos:
+            if not ciudadano.estado and ciudadano.enfermedad and ciudadano.enfermedad.contador > 0:
+                if random.random() < ciudadano.enfermedad.infeccion_probable:
+                    nuevos_infectados.append(ciudadano)
+                ciudadano.enfermedad.contador -= 1
+                if ciudadano.enfermedad.contador <= 0:
+                    ciudadano.estado = True
+        return nuevos_infectados
+
+    def guardar_estado(self, paso, nuevos_infectados):
+        with open('estado_simulacion.csv', 'a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['ID', 'Nombre', 'Apellido', 'Familia', 'Estado'])
-            for ciudadano in self.comunidad.ciudadanos:
-                writer.writerow([ciudadano.id, ciudadano.nombre, ciudadano.apellido, ciudadano.familia, 'Sano' if ciudadano.estado else 'Infectado'])
+            writer.writerow([paso, len(nuevos_infectados)])
 
-    def graficar(self, infectados_por_paso):
-        plt.figure()
-        plt.plot(infectados_por_paso, label='Infectados')
+    def graficar_infectados(self, infectados_totales):
+        plt.plot(infectados_totales)
         plt.xlabel('Pasos')
         plt.ylabel('Número de Infectados')
-        plt.title('Simulación SIR')
-        plt.legend()
+        plt.title('Simulación de Enfermedades Infecciosas')
+        plt.savefig('grafico_infectados.png')
         plt.show()
+

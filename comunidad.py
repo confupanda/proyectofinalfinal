@@ -1,5 +1,6 @@
 import json
 import random
+import os
 from ciudadano import Ciudadano
 
 class Comunidad:
@@ -12,10 +13,19 @@ class Comunidad:
         self.ciudadanos = self.generar_ciudadanos()
 
     def generar_ciudadanos(self):
-        with open('nombres_apellidos.json', 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            nombres = data['nombres']
-            apellidos = data['apellidos']
+        archivo = 'nombres_apellidos.json'
+        if not os.path.exists(archivo):
+            print(f"El archivo '{archivo}' no se encuentra en el directorio.")
+            return []
+
+        try:
+            with open(archivo, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                nombres = data['nombres']
+                apellidos = data['apellidos']
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error al leer el archivo '{archivo}': {e}")
+            return []
 
         ciudadanos = []
         for i in range(self.num_ciudadanos):
