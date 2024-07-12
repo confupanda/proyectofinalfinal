@@ -131,11 +131,11 @@ class Interfaz(Gtk.Application):
     def mostrar_grafico(self):
         figure = Figure(figsize=(5, 4), dpi=100)
         ax = figure.add_subplot(111)
+        pasos = []
+        infectados = []
         with open('resultados.csv', 'r') as file:
             reader = csv.reader(file)
             next(reader)  # Saltar la cabecera
-            pasos = []
-            infectados = []
             for row in reader:
                 pasos.append(int(row[0]))
                 infectados.append(int(row[1]))
@@ -144,7 +144,7 @@ class Interfaz(Gtk.Application):
         ax.set_ylabel('Infectados')
         ax.set_title('Simulación de Enfermedad Infecciosa')
 
-        canvas = FigureCanvas(figure)  # a Gtk.DrawingArea
+        canvas = FigureCanvas(figure)
         self.window.set_child(canvas)
 
 if __name__ == "__main__":

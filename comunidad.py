@@ -1,5 +1,6 @@
 import random
 import json
+import csv
 
 class Comunidad:
     def __init__(self, num_ciudadanos, promedio_conexion_fisica, enfermedad, num_infectados, probabilidad_conexion_fisica):
@@ -40,3 +41,9 @@ class Comunidad:
                         nuevos_infectados += 1
         self.num_infectados += nuevos_infectados
         self.num_contagios += nuevos_infectados
+        print(f"El total de contagios de la comunidad: {self.num_contagios}; casos activos: {self.num_infectados}.")
+
+        # Registrar los datos en el archivo CSV
+        with open('resultados.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.num_contagios, self.num_infectados])
