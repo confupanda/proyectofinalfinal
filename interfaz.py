@@ -133,7 +133,7 @@ class Interfaz(Gtk.Application):
         
         figure = Figure(figsize=(8, 6))
         ax = figure.add_subplot(111)
-
+        
         ax.plot(df['Día'], df['Casos Activos'], label="Casos Activos")
         ax.set_title("Simulación de Infectados")
         ax.set_xlabel("Días")
