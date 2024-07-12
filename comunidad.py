@@ -1,60 +1,65 @@
-
-
 import random
-
 import json
-
-class Persona:
-    def __init__(self, nombre, edad, infectado=False):
-        self.nombre = nombre
-        self.edad = edad
-        self.infectado = infectado
-        self.dias_infectado = 0
+import csv
 
 class Comunidad:
-    def _init_(self, num_ciudadanos, promedio_conexion_fisica, enfermedad, num_infectados, probabilidad_conexion_fisica):
-        self.personas = self.generar_personas(num_ciudadanos)
+    def __init__(self, num_ciudadanos, promedio_conexion_fisica, enfermedad, num_infectados, probabilidad_conexion_fisica):
+        self.num_ciudadanos = num_ciudadanos
         self.promedio_conexion_fisica = promedio_conexion_fisica
         self.enfermedad = enfermedad
+        self.num_infectados = num_infectados
         self.probabilidad_conexion_fisica = probabilidad_conexion_fisica
-        self.infectar_personas_iniciales(num_infectados)
-    
-    def generar_personas(self, num_personas):
-        with open('nombres_apellidos.json', 'r') as file:
-            data = json.load(file)
-        
-        nombres = data["nombres"]
-        apellidos = data["apellidos"]
-        
-        personas = []
-        for i in range(num_personas):
-            nombre = f"{random.choice(nombres)} {random.choice(apellidos)}"
-            edad = random.randint(1, 100)
-            persona = Persona(nombre, edad)
-            personas.append(persona)
-        
-        return personas
+        self.num_contagios = num_infectados
+        self.ciudadanos = self.generar_ciudadanos()
+        self.dia_actual = 0
 
-    def infectar_personas_iniciales(self, num_infectados):
-        infectados_iniciales = random.sample(self.personas, num_infectados)
-        for persona in infectados_iniciales:
-            persona.infectado = True
+    def generar_ciudadanos(self):
+        try:
+            with open('nombres_apellidos.json', 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                nombres = data['nombres']
+                apellidos = data['apellidos']
+        except FileNotFoundError:
+            print("El archivo 'nombres_apellidos.json' no se encuentra en el directorio.")
+            return []
+
+        ciudadanos = []
+        for i in range(self.num_ciudadanos):
+            nombre = random.choice(nombres) + " " + random.choice(apellidos)
+            edad = random.randint(1, 100)
+            infectado = i < self.num_infectados
+            duracion_infeccion = self.enfermedad.duracion_infeccion if infectado else 0
+            ciudadano = {"nombre": nombre, "edad": edad, "infectado": infectado, "dias_infectado": duracion_infeccion}
+            ciudadanos.append(ciudadano)
+        return ciudadanos
 
     def paso(self):
-        nuevos_infectados = []
+        nuevos_infectados = 0
+        for ciudadano in self.ciudadanos:
+            if ciudadano['infectado']:
+                ciudadano['dias_infectado'] -= 1
+                if ciudadano['dias_infectado'] <= 0:
+                    ciudadano['infectado'] = False
+                    self.num_infectados -= 1
+
+                contactos = random.choices(self.ciudadanos, k=self.promedio_conexion_fisica)
+                for contacto in contactos:
+                    if not contacto['infectado'] and not contacto['dias_infectado'] and random.random() < self.probabilidad_conexion_fisica:
+                        contacto['infectado'] = True
+                        contacto['dias_infectado'] = self.enfermedad.duracion_infeccion
+                        nuevos_infectados += 1
+        self.num_infectados += nuevos_infectados
+        self.num_contagios += nuevos_infectados
+
+        # Imprimir detalles de cada ciudadano
+        for ciudadano in self.ciudadanos:
+            print(f"Nombre: {ciudadano['nombre']}, Edad: {ciudadano['edad']}, Infectado: {ciudadano['infectado']}")
+
+        print(f"El total de contagios de la comunidad: {self.num_contagios}; casos activos: {self.num_infectados}.")
+
+        # Registrar los datos en el archivo CSV
+        with open('resultados.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.dia_actual, self.num_contagios, self.num_infectados])
         
-        for persona in self.personas:
-            if persona.infectado:
-                persona.dias_infectado += 1
-                if persona.dias_infectado >= self.enfermedad.promedio_pasos:
-                    persona.infectado = False
-                    persona.dias_infectado = 0
-            else:
-                if random.random() < self.enfermedad.infeccion_probable:
-                    nuevos_infectados.append(persona)
-        
-        for persona in nuevos_infectados:
-            persona.infectado = True
-    
-    def obtener_total_infectados(self):
-        return sum(1 for persona in self.personas if persona.infectado)
+        self.dia_actual += 1

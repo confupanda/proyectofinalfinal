@@ -63,11 +63,11 @@ class Interfaz(Gtk.Application):
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
 
-        self.label_pasos = Gtk.Label(label="Número de dias:")
+        self.label_pasos = Gtk.Label(label="Número de días:")
         vbox.append(self.label_pasos)
 
         self.entrada_pasos = Gtk.Entry()
-        self.entrada_pasos.set_placeholder_text("Número de dias")
+        self.entrada_pasos.set_placeholder_text("Número de días")
         vbox.append(self.entrada_pasos)
 
         self.boton_iniciar = Gtk.Button(label="Iniciar Simulación")
@@ -109,7 +109,7 @@ class Interfaz(Gtk.Application):
             self.resultado.set_text("Todos los valores deben ser mayores que 0.")
             return
 
-        enfermedad = Enfermedad(infeccion_probable=0.3, duracion_infeccion=7)
+        enfermedad = Enfermedad(infeccion_probable=0.3, promedio_pasos=7)
         comunidad = Comunidad(num_ciudadanos, 10, enfermedad, num_infectados, 0.05)
         simulador = Simulador()
         simulador.set_comunidad(comunidad)
@@ -138,19 +138,13 @@ class Interfaz(Gtk.Application):
             reader = csv.reader(file)
             next(reader)  # Saltar la cabecera
             for row in reader:
-                paso = int(row[0])
-                infectado = row[3] == 'True'
-                if infectado:
-                    if len(pasos) < paso:
-                        pasos.append(paso)
-                        infectados.append(1)
-                    else:
-                        infectados[paso - 1] += 1
+                pasos.append(int(row[0]))
+                infectados.append(int(row[1]))  # Total infectados
 
-        ax.plot(pasos, infectados, label="Casos Activos")
+        ax.plot(pasos, infectados, label="Total Infectados")
         ax.set_title("Simulación de Infectados")
         ax.set_xlabel("Días")
-        ax.set_ylabel("Casos Activos")
+        ax.set_ylabel("Total Infectados")
         ax.legend()
 
         # Mostrar el gráfico en la interfaz GTK
