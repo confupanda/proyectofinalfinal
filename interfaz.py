@@ -131,6 +131,16 @@ class Interfaz(Gtk.Application):
         df_sir = pd.DataFrame(resultados_sir, columns=['Susceptibles', 'Infectados', 'Recuperados'])
         df_sir.to_csv('resultados_sir.csv', index=False)  # Guardar resultados del modelo SIR
 
+        # Obtener estadísticas finales del modelo SIR
+        suscep_sir = df_sir['Susceptibles'].iloc[-1]
+        infectados_sir = df_sir['Infectados'].iloc[-1]
+        recuperados_sir = df_sir['Recuperados'].iloc[-1]
+        total_contagios_sir = num_ciudadanos - suscep_sir
+
+        print(f"El total de contagios del modelo SIR en la comunidad: {total_contagios_sir:.0f}")
+        print(f"Personas no infectadas (Modelo SIR susceptibles): {suscep_sir:.0f}")
+        print(f"Casos activos modelo SIR: {infectados_sir:.0f}")
+
         GLib.idle_add(self.update_results)
 
     def update_results(self):

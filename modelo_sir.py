@@ -1,4 +1,4 @@
-# modelo_sir.py
+
 
 class ModeloSIR:
     def __init__(self, poblacion, infectados_iniciales, recuperados_iniciales, beta, gamma):
