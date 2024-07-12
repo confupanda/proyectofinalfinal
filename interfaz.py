@@ -14,7 +14,7 @@ class Interfaz(Gtk.Application):
         if not self.window:
             self.window = Gtk.ApplicationWindow(application=self)
             self.window.set_title("Simulador de Enfermedades Infecciosas")
-            self.window.set_default_size(400, 400)
+            self.window.set_default_size(400, 300)
             self.build_ui()
         self.window.present()
 
@@ -26,22 +26,13 @@ class Interfaz(Gtk.Application):
         vbox.set_margin_end(20)
         self.window.set_child(vbox)
 
-        self.label_ciudadanos = Gtk.Label(label="Número de ciudadanos:")
-        vbox.append(self.label_ciudadanos)
-
         self.entrada_ciudadanos = Gtk.Entry()
         self.entrada_ciudadanos.set_placeholder_text("Número de ciudadanos")
         vbox.append(self.entrada_ciudadanos)
 
-        self.label_infectados = Gtk.Label(label="Número inicial de infectados:")
-        vbox.append(self.label_infectados)
-
         self.entrada_infectados = Gtk.Entry()
         self.entrada_infectados.set_placeholder_text("Número inicial de infectados")
         vbox.append(self.entrada_infectados)
-
-        self.label_pasos = Gtk.Label(label="Número de pasos:")
-        vbox.append(self.label_pasos)
 
         self.entrada_pasos = Gtk.Entry()
         self.entrada_pasos.set_placeholder_text("Número de pasos")
@@ -51,34 +42,14 @@ class Interfaz(Gtk.Application):
         self.boton_iniciar.connect("clicked", self.on_start_button_clicked)
         vbox.append(self.boton_iniciar)
 
-        self.resultado = Gtk.Label()
-        vbox.append(self.resultado)
-
     def on_start_button_clicked(self, button):
-        num_ciudadanos = self.entrada_ciudadanos.get_text()
-        num_infectados = self.entrada_infectados.get_text()
-        num_pasos = self.entrada_pasos.get_text()
-
-        if not num_ciudadanos.isdigit() or not num_infectados.isdigit() or not num_pasos.isdigit():
-            self.resultado.set_text("Por favor, ingrese valores válidos.")
-            return
-
-        num_ciudadanos = int(num_ciudadanos)
-        num_infectados = int(num_infectados)
-        num_pasos = int(num_pasos)
-
-        if num_ciudadanos <= 0 or num_infectados < 0 or num_infectados > num_ciudadanos or num_pasos <= 0:
-            self.resultado.set_text("Ingrese valores coherentes.")
-            return
+        num_ciudadanos = int(self.entrada_ciudadanos.get_text())
+        num_infectados = int(self.entrada_infectados.get_text())
+        num_pasos = int(self.entrada_pasos.get_text())
 
         covid = Enfermedad(infeccion_probable=0.3, promedio_pasos=18)
         comunidad = Comunidad(num_ciudadanos=num_ciudadanos, promedio_conexion_fisica=8, enfermedad=covid, num_infectados=num_infectados, probabilidad_conexion_fisica=0.8)
-        sim = Simulador()
-        sim.set_comunidad(comunidad)
-        sim.set_num_pasos(num_pasos)
-        sim.iniciar_simulacion()
-
-        self.resultado.set_text("Simulación completada. Revisa los archivos CSV y el gráfico.")
-
-app = Interfaz()
-app.run(None)
+        simulador = Simulador()
+        simulador.set_comunidad(comunidad)
+        simulador.set_num_pasos(num_pasos)
+        simulador.iniciar_simulacion()

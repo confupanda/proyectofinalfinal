@@ -12,14 +12,10 @@ class Comunidad:
         self.ciudadanos = self.generar_ciudadanos()
 
     def generar_ciudadanos(self):
-        try:
-            with open('nombres_apellidos.json', 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                nombres = data['nombres']
-                apellidos = data['apellidos']
-        except FileNotFoundError:
-            print("El archivo 'nombres_apellidos.json' no se encuentra en el directorio.")
-            return []
+        with open('nombres_apellidos.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            nombres = data['nombres']
+            apellidos = data['apellidos']
 
         ciudadanos = []
         for i in range(self.num_ciudadanos):

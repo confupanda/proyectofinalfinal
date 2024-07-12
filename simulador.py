@@ -41,7 +41,7 @@ class Simulador:
         return contactos
 
     def guardar_estado(self, paso):
-        with open(f'estado_paso_{paso}.csv', 'w', newline='') as file:
+        with open(f'estado_pasoooooooo_{paso}.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['ID', 'Nombre', 'Apellido', 'Familia', 'Estado'])
             for ciudadano in self.comunidad.ciudadanos:

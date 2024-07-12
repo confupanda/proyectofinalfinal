@@ -1,3 +1,5 @@
+import random
+
 class Ciudadano:
     def __init__(self, id, nombre, apellido, familia, enfermedad=None):
         self.id = id
