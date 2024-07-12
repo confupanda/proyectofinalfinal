@@ -14,8 +14,7 @@ class Comunidad:
         self.num_contagios = num_infectados
         self.dia_actual = 0
         self.ciudadanos = self.generar_ciudadanos()
-        self.guardar_ciudadanos_csv()
-
+        
     def generar_ciudadanos(self):
         try:
             with open('nombres_apellidos.json', 'r', encoding='utf-8') as file:
@@ -27,19 +26,13 @@ class Comunidad:
             return pd.DataFrame()
 
         ciudadanos = pd.DataFrame({
-            'id': range(1, self.num_ciudadanos + 1),
             'nombre': [random.choice(nombres) + " " + random.choice(apellidos) for _ in range(self.num_ciudadanos)],
             'edad': np.random.randint(1, 101, self.num_ciudadanos),
             'infectado': [i < self.num_infectados for i in range(self.num_ciudadanos)],
-            'dias_infectado': [self.enfermedad.duracion_infeccion if i < self.num_infectados else 0 for i in range(self.num_ciudadanos)],
-            'dia_infectado': [0 if i < self.num_infectados else -1 for i in range(self.num_ciudadanos)],
-            'dia_sano': [-1 for _ in range(self.num_ciudadanos)]
+            'dias_infectado': [self.enfermedad.duracion_infeccion if i < self.num_infectados else 0 for i in range(self.num_ciudadanos)]
         })
         return ciudadanos
-
-    def guardar_ciudadanos_csv(self):
-        self.ciudadanos.to_csv('ciudadanos.csv', index=False)
-
+    
     def paso(self):
         nuevos_infectados = 0
         infectados = self.ciudadanos[self.ciudadanos['infectado']]
@@ -49,7 +42,6 @@ class Comunidad:
             if self.ciudadanos.at[idx, 'dias_infectado'] <= 0:
                 self.ciudadanos.at[idx, 'infectado'] = False
                 self.ciudadanos.at[idx, 'dias_infectado'] = -1
-                self.ciudadanos.at[idx, 'dia_sano'] = self.dia_actual
                 self.num_infectados -= 1
 
             contactos = self.ciudadanos.sample(self.promedio_conexion_fisica)
@@ -57,7 +49,6 @@ class Comunidad:
                 if not contacto['infectado'] and not contacto['dias_infectado'] and random.random() < self.probabilidad_conexion_fisica:
                     self.ciudadanos.at[contacto.name, 'infectado'] = True
                     self.ciudadanos.at[contacto.name, 'dias_infectado'] = self.enfermedad.duracion_infeccion
-                    self.ciudadanos.at[contacto.name, 'dia_infectado'] = self.dia_actual
                     nuevos_infectados += 1
 
         self.num_infectados += nuevos_infectados
@@ -72,4 +63,3 @@ class Comunidad:
             writer.writerow([self.dia_actual, self.num_contagios, self.num_infectados])
 
         self.dia_actual += 1
-        self.guardar_ciudadanos_csv()

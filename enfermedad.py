@@ -7,3 +7,4 @@ class Enfermedad:
 
     def es_infeccioso(self):
         return random.random() < self.infeccion_probable
+
